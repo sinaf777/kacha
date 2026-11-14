@@ -931,15 +931,45 @@
   function lookupAccount(value) {
     const box = document.getElementById('recipient-name-box');
     const name = document.getElementById('recipient-name-display');
-    if (!value || value.length < 4) {
+    const accountNumber = value.trim();
+
+    if (!accountNumber) {
       box.style.display = 'none';
       return;
     }
-    box.style.display = 'flex';
-    name.textContent = value.length > 6 ? 'Abel Bekele' : 'Mekdes Tekle';
+
+    if (accountNumber === '1000022532115') {
+      box.style.display = 'flex';
+      box.style.borderColor = '#22c55e';
+      name.textContent = 'Zeray Gebremical Gebremedhn';
+      document.getElementById('recipient-account').style.borderColor = '#22c55e';
+      const badge = box.children[0];
+      const label = box.children[1].children[0];
+      badge.textContent = '✓';
+      badge.style.color = '#22c55e';
+      label.textContent = 'Account Verified';
+      label.style.color = '#22c55e';
+    } else {
+      box.style.display = 'flex';
+      box.style.borderColor = '#ef4444';
+      name.textContent = 'Invalid account number';
+      document.getElementById('recipient-account').style.borderColor = '#ef4444';
+      const badge = box.children[0];
+      const label = box.children[1].children[0];
+      badge.textContent = '!';
+      badge.style.color = '#ef4444';
+      label.textContent = 'Invalid Account';
+      label.style.color = '#ef4444';
+    }
   }
 
   function doTransfer() {
+    const accountNumber = document.getElementById('recipient-account').value.trim();
+    if (accountNumber !== '1000022532115') {
+      showToast('Enter a valid recipient account number');
+      return;
+    }
+
     const amount = document.getElementById('transfer-amount').value;
     if (!amount || Number(amount) <= 0) {
       showToast('Enter valid amount');
