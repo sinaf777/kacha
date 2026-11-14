@@ -403,15 +403,16 @@
 
     /* Countdown popup */
     .countdown-popup {
+      display: none;
       position: absolute;
       inset: 0;
       background: rgba(18, 11, 6, 0.92);
-      display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1000;
       padding: 32px 24px;
     }
+    .countdown-popup.show { display: flex; }
 
     .countdown-box {
       width: 100%;
@@ -468,6 +469,7 @@
     <span id="toast-msg">Not available</span>
   </div>
 
+  <!-- Countdown Popup -->
   <div class="countdown-popup" id="countdown-popup">
     <div class="countdown-box">
       <div class="countdown-logo">
@@ -873,18 +875,29 @@
 
 <script>
   const countdownTime = document.getElementById('countdown-time');
-  const oneHourMs = 60 * 60 * 1000;
-  const endTime = Date.now() + oneHourMs;
+  let countdownEndTime = 0;
+  let countdownTimer;
 
   function updateCountdown() {
-    const remaining = Math.max(0, endTime - Date.now());
-    const hours = String(Math.floor(remaining / (60 * 60 * 1000))).padStart(2, '0');
-    const minutes = String(Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000))).padStart(2, '0');
-    const seconds = String(Math.floor((remaining % (60 * 1000)) / 1000)).padStart(2, '0');
+    const remaining = Math.max(0, countdownEndTime - Date.now());
+    const hours = String(Math.floor(remaining / 3600000)).padStart(2, '0');
+    const minutes = String(Math.floor((remaining % 3600000) / 60000)).padStart(2, '0');
+    const seconds = String(Math.floor((remaining % 60000) / 1000)).padStart(2, '0');
+
     countdownTime.textContent = `${hours}:${minutes}:${seconds}`;
+
+    if (remaining === 0) {
+      clearInterval(countdownTimer);
+    }
   }
-  updateCountdown();
-  setInterval(updateCountdown, 1000);
+
+  function showCountdownPopup() {
+    countdownEndTime = Date.now() + 60 * 60 * 1000;
+    updateCountdown();
+    clearInterval(countdownTimer);
+    countdownTimer = setInterval(updateCountdown, 1000);
+    document.getElementById('countdown-popup').classList.add('show');
+  }
 
   function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(screen => {
@@ -932,8 +945,8 @@
       showToast('Enter valid amount');
       return;
     }
-    showToast('Transfer sent');
-    showScreen('home-screen');
+
+    showCountdownPopup();
   }
 
   document.querySelectorAll('.key-btn[data-k]').forEach(button => {
