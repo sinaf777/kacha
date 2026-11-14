@@ -1,143 +1,783 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KachaPay – Mobile Banking</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0; padding: 0; width: 100%; height: 100%;
-      background: #0c0704; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      display: flex; justify-content: center; align-items: center;
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #0c0704;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     .phone-frame {
       width: min(390px, 100vw);
       height: min(844px, calc(100vw * 844 / 390));
-      background: #120b06; border-radius: 44px; border: 5px solid #ea580c;
-      box-shadow: 0 0 0 1px #7c2d12, 0 0 50px rgba(234,88,12,0.25), 0 30px 80px rgba(0,0,0,0.85);
-      overflow: hidden; position: relative; flex-shrink: 0;
+      background: #120b06;
+      border-radius: 44px;
+      border: 5px solid #ea580c;
+      box-shadow: 0 0 0 1px #7c2d12, 0 0 50px rgba(234, 88, 12, 0.25), 0 30px 80px rgba(0, 0, 0, 0.85);
+      overflow: hidden;
+      position: relative;
+      flex-shrink: 0;
     }
 
     .screen {
-      width: 100%; height: 100%; position: absolute; inset: 0;
-      display: none; flex-direction: column; overflow: hidden;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
     }
-    .screen.active { display: flex; }
 
-    #home-screen, #history-screen { background: #120b06; }
+    .screen.active {
+      display: flex;
+    }
 
-    .scrollable { overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+    /* ---- PIN SCREEN ---- */
+    #pin-screen {
+      background: linear-gradient(155deg, #180b03 0%, #2a1104 50%, #140902 100%);
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      padding: 48px 32px 40px;
+    }
 
-    .hero-card {
-      margin: 8px 20px 0; border-radius: 24px;
-      background: linear-gradient(135deg, #ea580c 0%, #f97316 60%, #fb923c 100%);
-      padding: 24px; position: relative; overflow: hidden;
-      box-shadow: 0 12px 40px rgba(234,88,12,0.45);
+    .bank-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 36px;
     }
-    .hero-card::before, .hero-card::after {
-      content: ''; position: absolute; border-radius: 50%; pointer-events: none;
-      background: rgba(255,255,255,0.08);
-    }
-    .hero-card::before { top: -40px; right: -40px; width: 180px; height: 180px; }
-    .hero-card::after { bottom: -60px; left: -20px; width: 200px; height: 200px; }
 
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .balance-label { font-size: 12px; color: rgba(255,255,255,0.85); margin-bottom: 6px; letter-spacing: 0.5px; }
-    .balance-row { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; position: relative; z-index: 2; }
-    .balance-amount { font-size: 34px; font-weight: 800; color: #fff; letter-spacing: -1px; }
-    .eye-btn {
-      background: rgba(255,255,255,0.2); border: none; border-radius: 50%;
-      width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
-      cursor: pointer; color: #fff; font-size: 16px; transition: background 0.15s; flex-shrink: 0;
-    }
-    .eye-btn:hover { background: rgba(255,255,255,0.35); }
-    .card-footer { display: flex; justify-content: space-between; align-items: flex-end; }
-    .card-number { font-size: 13px; color: rgba(255,255,255,0.95); font-weight: 700; letter-spacing: 1.5px; }
-    .card-name { font-size: 11px; color: #ffffff; font-weight: 700; text-align: right; }
-
-    .section-title { font-size: 15px; font-weight: 700; color: #ffffff; padding: 20px 20px 10px; }
-    .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 0 20px; }
-    .action-btn {
-      display: flex; flex-direction: column; align-items: center; gap: 8px;
-      padding: 14px 4px; background: #1f1107; border: 1px solid #331d0d;
-      border-radius: 16px; cursor: pointer; transition: all 0.15s;
-    }
-    .action-btn:hover { background: #331a0a; transform: translateY(-2px); border-color: #ea580c; }
-    .action-label { font-size: 11px; color: #fed7aa; font-weight: 500; }
-
-    .info-card {
-      margin: 16px 20px; background: #1f1107; border: 1px solid #331d0d;
-      border-radius: 20px; padding: 20px;
-    }
-    .info-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 12px 0; border-bottom: 1px solid #2c170a;
-    }
-    .info-row:last-child { border-bottom: none; }
-    .info-key { font-size: 13px; color: #fdba74; }
-    .info-val { font-size: 14px; font-weight: 600; color: #ffffff; }
-
-    .bottom-nav {
-      width: 100%; background: #120b06; border-top: 1px solid #2c170a;
-      display: flex; justify-content: space-around; padding: 10px 0 20px; flex-shrink: 0;
-    }
-    .nav-btn {
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
-      background: none; border: none; cursor: pointer; color: #9a6b47;
-      font-size: 10px; font-weight: 600; transition: color 0.15s; padding: 6px 20px;
-    }
-    .nav-btn.active { color: #f97316; }
-    .nav-btn .nav-icon { font-size: 22px; line-height: 1; }
-
-    .inner-header {
-      display: flex; align-items: center; gap: 12px; padding: 20px 20px 16px;
-      border-bottom: 1px solid #2c170a; flex-shrink: 0;
-    }
-    .back-btn {
-      width: 36px; height: 36px; border-radius: 50%; background: #1f1107;
-      border: 1px solid #331d0d; cursor: pointer; color: #ffffff;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .inner-title { font-size: 18px; font-weight: 700; color: #ffffff; }
-
-    .transactions { padding: 0 20px 16px; }
-    .tx-item {
-      display: flex; align-items: center; gap: 12px; padding: 14px 0;
-      border-bottom: 1px solid #2c170a;
-    }
-    .tx-item.card-like {
-      background: #190e06; border: 1px solid #361b09; border-radius: 18px;
-      padding: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+    .logo-circle {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 32px rgba(234, 88, 12, 0.5);
       margin-bottom: 12px;
     }
-    .tx-icon-wrap {
-      width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
-      font-size: 20px; flex-shrink: 0;
-    }
-    .tx-info { flex: 1; }
-    .tx-name { font-size: 14px; font-weight: 600; color: #ffffff; }
-    .tx-date { font-size: 12px; color: #fdba74; margin-top: 2px; }
-    .tx-amount { font-size: 15px; font-weight: 700; }
-    .tx-amount.debit { color: #f87171; }
-    .tx-amount.credit { color: #34d399; }
 
-    .toast-notif {
-      position: absolute; top: 24px; left: 50%; transform: translateX(-50%) translateY(-30px);
-      background: #1f1107; border: 1.5px solid #ea580c; color: #ffffff; font-size: 13px;
-      font-weight: 600; padding: 10px 20px; border-radius: 9999px; display: flex; align-items: center; gap: 8px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(234,88,12,0.35); opacity: 0;
-      pointer-events: none; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); z-index: 999;
+    .bank-name {
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 1px;
     }
-    .toast-notif.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .bank-sub {
+      font-size: 11px;
+      color: #fb923c;
+      letter-spacing: 2.5px;
+      margin-top: 2px;
+      font-weight: 600;
+    }
+
+    .pin-label {
+      font-size: 15px;
+      color: #fdba74;
+      margin-bottom: 20px;
+    }
+
+    .pin-dots {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .pin-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid #f97316;
+      background: transparent;
+      transition: background 0.15s, transform 0.15s;
+    }
+
+    .pin-dot.filled {
+      background: #f97316;
+      transform: scale(1.1);
+      box-shadow: 0 0 12px rgba(249, 115, 22, 0.7);
+    }
+
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      width: 100%;
+      max-width: 280px;
+    }
+
+    .key-btn {
+      height: 64px;
+      border-radius: 50%;
+      border: 1.5px solid #3c1e0a;
+      background: linear-gradient(145deg, #241306, #170b03);
+      color: #ffffff;
+      font-size: 22px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.12s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .key-btn:active,
+    .key-btn.pressed {
+      background: linear-gradient(145deg, #ea580c, #f97316);
+      border-color: #f97316;
+      box-shadow: 0 0 20px rgba(249, 115, 22, 0.6);
+      transform: scale(0.93);
+    }
+
+    .key-btn.del-btn {
+      font-size: 18px;
+      color: #fdba74;
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .key-btn.empty {
+      visibility: hidden;
+    }
+
+    .pin-error {
+      color: #f87171;
+      font-size: 13px;
+      margin-top: 12px;
+      min-height: 20px;
+      text-align: center;
+    }
+
+    /* ---- HOME SCREEN ---- */
+    #home-screen {
+      background: #120b06;
+      flex-direction: column;
+    }
+
+    .hero-card {
+      margin: 8px 20px 0;
+      border-radius: 24px;
+      background: linear-gradient(135deg, #ea580c 0%, #f97316 60%, #fb923c 100%);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(234, 88, 12, 0.45);
+    }
+
+    .hero-card::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      pointer-events: none;
+    }
+
+    .hero-card::after {
+      content: '';
+      position: absolute;
+      bottom: -60px;
+      left: -20px;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      pointer-events: none;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .card-chip {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.75);
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    .card-logo {
+      font-size: 13px;
+      color: #fff;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .balance-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.75);
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .balance-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .balance-amount {
+      font-size: 34px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+
+    .eye-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 50%;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #fff;
+      font-size: 16px;
+      transition: background 0.15s;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 3;
+    }
+
+    .eye-btn:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .card-number {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.8);
+      letter-spacing: 2px;
+      font-weight: 500;
+    }
+
+    .card-name {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.75);
+      font-weight: 600;
+    }
+
+    /* Quick Actions */
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      padding: 20px 20px 10px;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 0 20px;
+    }
+
+    .action-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 4px;
+      background: #1f1107;
+      border: 1px solid #331d0d;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .action-btn:not(:disabled):hover {
+      background: #331a0a;
+      transform: translateY(-2px);
+      border-color: #ea580c;
+    }
+
+    .action-btn:disabled {
+      opacity: 0.45;
+      cursor: default;
+      pointer-events: none;
+      transform: none;
+    }
+
+    .action-icon {
+      font-size: 22px;
+    }
+
+    .action-label {
+      font-size: 11px;
+      color: #fed7aa;
+      font-weight: 500;
+    }
+
+    /* Transactions */
+    .transactions {
+      padding: 0 20px 16px;
+    }
+
+    .tx-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid #2c170a;
+    }
+
+    .tx-icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .tx-info {
+      flex: 1;
+    }
+
+    .tx-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .tx-date {
+      font-size: 12px;
+      color: #fdba74;
+      margin-top: 2px;
+    }
+
+    .tx-amount {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .tx-amount.debit {
+      color: #f87171;
+    }
+
+    .tx-amount.credit {
+      color: #34d399;
+    }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      width: 100%;
+      background: #120b06;
+      border-top: 1px solid #2c170a;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0 20px;
+      flex-shrink: 0;
+    }
+
+    .nav-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #9a6b47;
+      font-size: 10px;
+      font-weight: 600;
+      transition: color 0.15s;
+      padding: 6px 20px;
+    }
+
+    .nav-btn.active {
+      color: #f97316;
+    }
+
+    .nav-btn .nav-icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    /* Inner screens */
+    #transfer-screen,
+    #cards-screen,
+    #history-screen,
+    #profile-screen {
+      background: #120b06;
+      flex-direction: column;
+    }
+
+    .inner-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid #2c170a;
+      flex-shrink: 0;
+    }
+
+    .back-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #1f1107;
+      border: 1px solid #331d0d;
+      cursor: pointer;
+      color: #ffffff;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .inner-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .info-card {
+      margin: 16px 20px;
+      background: #1f1107;
+      border: 1px solid #331d0d;
+      border-radius: 20px;
+      padding: 20px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #2c170a;
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-key {
+      font-size: 13px;
+      color: #fdba74;
+    }
+
+    .info-val {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .form-group {
+      padding: 0 20px 16px;
+    }
+
+    .form-label {
+      font-size: 12px;
+      color: #fdba74;
+      margin-bottom: 8px;
+      display: block;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .form-input {
+      width: 100%;
+      background: #1f1107;
+      border: 1.5px solid #3c200c;
+      border-radius: 14px;
+      padding: 14px 16px;
+      color: #ffffff;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .form-input:focus {
+      border-color: #f97316;
+    }
+
+    .primary-btn {
+      margin: 8px 20px;
+      width: calc(100% - 40px);
+      padding: 16px;
+      background: linear-gradient(135deg, #ea580c, #f97316);
+      border: none;
+      border-radius: 16px;
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      box-shadow: 0 8px 24px rgba(234, 88, 12, 0.45);
+    }
+
+    .primary-btn:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    .primary-btn:active {
+      transform: scale(0.97);
+    }
+
+    .success-popup {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(14, 7, 3, 0.85);
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      flex-direction: column;
+      gap: 16px;
+      border-radius: 44px;
+    }
+
+    .success-popup.show {
+      display: flex;
+    }
+
+    .success-box {
+      background: #1f1107;
+      border: 1px solid #3c200c;
+      border-radius: 24px;
+      padding: 32px;
+      text-align: center;
+      width: 280px;
+    }
+
+    .success-icon {
+      font-size: 56px;
+      margin-bottom: 12px;
+    }
+
+    .success-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .success-msg {
+      font-size: 14px;
+      color: #fdba74;
+    }
+
+    .close-popup {
+      margin-top: 16px;
+      padding: 12px 32px;
+      background: linear-gradient(135deg, #ea580c, #f97316);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    /* PIN Confirm Overlay */
+    .pin-confirm-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(18, 11, 6, 0.95);
+      backdrop-filter: blur(6px);
+      justify-content: center;
+      align-items: center;
+      z-index: 998;
+      border-radius: 44px;
+      flex-direction: column;
+      gap: 0;
+      padding: 32px;
+    }
+
+    .pin-confirm-overlay.show {
+      display: flex;
+    }
+
+    .pin-confirm-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .pin-confirm-sub {
+      font-size: 13px;
+      color: #fdba74;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .pin-confirm-dots {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .pin-confirm-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid #f97316;
+      background: transparent;
+      transition: background 0.15s, transform 0.15s;
+    }
+
+    .pin-confirm-dot.filled {
+      background: #f97316;
+      transform: scale(1.1);
+      box-shadow: 0 0 10px rgba(249, 115, 22, 0.7);
+    }
+
+    .pin-confirm-keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      width: 100%;
+      max-width: 260px;
+    }
+
+    .pin-confirm-key {
+      height: 58px;
+      border-radius: 50%;
+      border: 1.5px solid #3c1e0a;
+      background: linear-gradient(145deg, #241306, #170b03);
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.12s;
+      user-select: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .pin-confirm-key:active,
+    .pin-confirm-key.pressed {
+      background: linear-gradient(145deg, #ea580c, #f97316);
+      border-color: #f97316;
+      box-shadow: 0 0 20px rgba(249, 115, 22, 0.6);
+      transform: scale(0.93);
+    }
+
+    .pin-confirm-key.del {
+      font-size: 16px;
+      color: #fdba74;
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .pin-confirm-key.empty-key {
+      visibility: hidden;
+    }
+
+    .pin-confirm-error {
+      color: #f87171;
+      font-size: 13px;
+      margin-top: 12px;
+      min-height: 20px;
+      text-align: center;
+    }
+
+    .pin-confirm-cancel {
+      margin-top: 20px;
+      background: none;
+      border: none;
+      color: #fdba74;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* Scrollable inner content */
+    .scrollable {
+      overflow-y: auto;
+      flex: 1;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Toast Notification */
+    .toast-notif {
+      position: absolute;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-30px);
+      background: #1f1107;
+      border: 1.5px solid #ea580c;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 20px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(234, 88, 12, 0.35);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 999;
+    }
+
+    .toast-notif.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
   </style>
 </head>
+
 <body>
+
   <div class="phone-frame" id="app">
+    <!-- Floating Toast Notification -->
     <div id="toast-notif" class="toast-notif">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.5"
+        stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="12" y1="8" x2="12" y2="12"></line>
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -145,33 +785,92 @@
       <span id="toast-msg">Not available</span>
     </div>
 
-    <div class="screen active" id="home-screen">
+    <!-- ══════════ PIN SCREEN ══════════ -->
+    <div class="screen active" id="pin-screen">
+      <div class="bank-logo">
+        <div class="logo-circle">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+        </div>
+        <div class="bank-name">KachaPay</div>
+        <div class="bank-sub">MOBILE MONEY & BANKING</div>
+      </div>
+
+      <div class="pin-label">Enter your 6-digit PIN</div>
+
+      <div class="pin-dots" id="pin-dots">
+        <div class="pin-dot" id="d0"></div>
+        <div class="pin-dot" id="d1"></div>
+        <div class="pin-dot" id="d2"></div>
+        <div class="pin-dot" id="d3"></div>
+        <div class="pin-dot" id="d4"></div>
+        <div class="pin-dot" id="d5"></div>
+      </div>
+
+      <div class="keypad">
+        <button class="key-btn" data-k="1">1</button>
+        <button class="key-btn" data-k="2">2</button>
+        <button class="key-btn" data-k="3">3</button>
+        <button class="key-btn" data-k="4">4</button>
+        <button class="key-btn" data-k="5">5</button>
+        <button class="key-btn" data-k="6">6</button>
+        <button class="key-btn" data-k="7">7</button>
+        <button class="key-btn" data-k="8">8</button>
+        <button class="key-btn" data-k="9">9</button>
+        <button class="key-btn empty"></button>
+        <button class="key-btn" data-k="0">0</button>
+        <button class="key-btn del-btn" id="del-btn" aria-label="Delete">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+            <line x1="18" y1="9" x2="12" y2="15"></line>
+            <line x1="12" y1="9" x2="18" y2="15"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="pin-error" id="pin-error"></div>
+    </div>
+
+    <!-- ══════════ HOME SCREEN ══════════ -->
+    <div class="screen" id="home-screen">
       <div class="scrollable">
+        <!-- Greeting -->
         <div style="padding: 16px 24px 4px; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <div style="font-size:13px; color:#fdba74;">Good evening,</div>
             <div style="font-size:18px; font-weight:800; color:#ffffff;">Zeray Gebremical Gebremedhn.</div>
           </div>
-          <div onclick="showToast('Not available')" style="cursor:pointer; width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#ea580c,#f97316);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(234,88,12,0.35);">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <div onclick="showToast('Not available')"
+            style="cursor:pointer; width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#ea580c,#f97316);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(234,88,12,0.4);"
+            title="Profile">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
           </div>
         </div>
 
+        <!-- Balance Card -->
         <div class="hero-card" style="margin-top:16px;">
           <div class="card-header">
             <div class="card-chip" style="display:flex; align-items:center; gap:8px;">
               <svg width="24" height="16" viewBox="0 0 24 16" fill="none">
-                <rect x="0.5" y="0.5" width="23" height="15" rx="3" stroke="#ffffff" fill="#ffffff" fill-opacity="0.25"/>
-                <rect x="5" y="4" width="14" height="8" rx="1.5" stroke="#ffffff" fill="#ffffff" fill-opacity="0.35"/>
-                <line x1="5" y1="8" x2="19" y2="8" stroke="#ffffff"/>
+                <rect x="0.5" y="0.5" width="23" height="15" rx="3" stroke="#ffffff" fill="#ffffff"
+                  fill-opacity="0.25" />
+                <rect x="5" y="4" width="14" height="8" rx="1.5" stroke="#ffffff" fill="#ffffff" fill-opacity="0.35" />
+                <line x1="5" y1="8" x2="19" y2="8" stroke="#ffffff" />
               </svg>
               <span style="color:#ffffff; font-weight:700;">PREMIUM ACCOUNT</span>
             </div>
             <div class="card-logo" style="display:flex; align-items:center; gap:6px;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
                 <polyline points="2 17 12 22 22 17"></polyline>
                 <polyline points="2 12 12 17 22 12"></polyline>
@@ -179,27 +878,42 @@
               <span style="color:#ffffff; font-weight:800; font-size:15px; letter-spacing:0.5px;">KachaPay</span>
             </div>
           </div>
-          <div class="balance-label">TOTAL BALANCE</div>
+          <div class="balance-label" style="color:rgba(255,255,255,0.85); font-weight:600;">TOTAL BALANCE</div>
           <div class="balance-row">
             <div class="balance-amount" id="balance-display">••••••</div>
             <button class="eye-btn" id="eye-btn" onclick="toggleBalance()" aria-label="Toggle balance">
-              <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
               </svg>
             </button>
           </div>
           <div class="card-footer">
-            <div class="card-number">0912691894</div>
-            <div class="card-name">Zeray Gebremical Gebremedhn.</div>
+            <div class="card-number" style="color:rgba(255,255,255,0.95); font-weight:700; letter-spacing:1.5px;">
+              0912691894</div>
+            <div class="card-name" style="color:#ffffff; font-weight:700; font-size:11px; text-align:right;">Zeray
+              Gebremical Gebremedhn.</div>
           </div>
         </div>
 
+        <!-- Quick Actions -->
         <div class="section-title">Quick Actions</div>
         <div class="quick-actions">
+          <button class="action-btn" onclick="showScreen('transfer-screen')">
+            <span class="action-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="7" y1="17" x2="17" y2="7"></line>
+                <polyline points="7 7 17 7 17 17"></polyline>
+              </svg>
+            </span>
+            <span class="action-label" style="color:#f97316; font-weight:600;">Transfer</span>
+          </button>
           <button class="action-btn" onclick="showScreen('history-screen')">
             <span class="action-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>
                 <polyline points="12 6 12 12 16 14"></polyline>
               </svg>
@@ -208,7 +922,8 @@
           </button>
           <button class="action-btn" onclick="showToast('Not available')">
             <span class="action-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fdba74" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fdba74" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <rect x="2" y="5" width="20" height="14" rx="2"></rect>
                 <line x1="2" y1="10" x2="22" y2="10"></line>
               </svg>
@@ -217,7 +932,8 @@
           </button>
           <button class="action-btn" onclick="showToast('Not available')">
             <span class="action-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fdba74" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fdba74" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="20" x2="18" y2="10"></line>
                 <line x1="12" y1="20" x2="12" y2="4"></line>
                 <line x1="6" y1="20" x2="6" y2="14"></line>
@@ -225,49 +941,59 @@
             </span>
             <span class="action-label">Analytics</span>
           </button>
-          <button class="action-btn" onclick="showToast('Not available')">
-            <span class="action-icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fdba74" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 12h16"></path>
-                <path d="M12 4v16"></path>
-              </svg>
-            </span>
-            <span class="action-label">More</span>
-          </button>
         </div>
 
+        <!-- Accounts -->
         <div class="section-title">My Account</div>
-        <div class="info-card" onclick="showToast('Not available')" style="margin:0 20px; display:flex; align-items:center; gap:14px; cursor:pointer;">
-          <div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#ea580c,#f97316);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(234,88,12,0.35);">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="4" width="20" height="16" rx="2"></rect>
-              <path d="M12 8v8m-3-5h6"></path>
-            </svg>
-          </div>
-          <div style="flex:1;">
-            <div style="font-size:14px;font-weight:600;color:#ffffff;">Savings Account</div>
-            <div style="font-size:12px;color:#fdba74;font-weight:600;">0912691894</div>
-          </div>
-          <div style="text-align:right;">
-            <div class="acc-balance" style="font-size:15px;font-weight:700;color:#ffffff;">••••</div>
-            <div style="font-size:11px;color:#f97316;font-weight:600;">Active</div>
+        <div style="padding: 0 20px; display:flex; flex-direction:column; gap:10px;">
+          <div class="info-card" onclick="showToast('Not available')"
+            style="margin:0; display:flex; align-items:center; gap:14px; cursor:pointer;">
+            <div
+              style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#ea580c,#f97316);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(234,88,12,0.35);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                <path d="M12 8v8m-3-5h6"></path>
+              </svg>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:600;color:#ffffff;">Savings Account</div>
+              <div style="font-size:12px;color:#fdba74;font-weight:600;">0912691894</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="acc-balance" style="font-size:15px;font-weight:700;color:#ffffff;">••••</div>
+              <div style="font-size:11px;color:#f97316;font-weight:600;">Active</div>
+            </div>
           </div>
         </div>
       </div>
 
+      <!-- Bottom Nav -->
       <div class="bottom-nav">
         <button class="nav-btn active" onclick="showScreen('home-screen')">
           <span class="nav-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
               <polyline points="9 22 9 12 15 12 15 22"></polyline>
             </svg>
           </span>
           <span>Home</span>
         </button>
+        <button class="nav-btn" onclick="showScreen('transfer-screen')">
+          <span class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="7" y1="17" x2="17" y2="7"></line>
+              <polyline points="7 7 17 7 17 17"></polyline>
+            </svg>
+          </span>
+          <span>Transfer</span>
+        </button>
         <button class="nav-btn" onclick="showScreen('history-screen')">
           <span class="nav-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <polyline points="12 6 12 12 16 14"></polyline>
             </svg>
@@ -276,29 +1002,236 @@
         </button>
         <button class="nav-btn" onclick="showToast('Not available')">
           <span class="nav-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <rect x="2" y="5" width="20" height="14" rx="2"></rect>
               <line x1="2" y1="10" x2="22" y2="10"></line>
             </svg>
           </span>
           <span>Cards</span>
         </button>
-        <button class="nav-btn" onclick="showToast('Not available')">
-          <span class="nav-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 12h16"></path>
-              <path d="M12 4v16"></path>
+      </div>
+    </div>
+
+    <!-- ══════════ TRANSFER SCREEN ══════════ -->
+    <div class="screen" id="transfer-screen">
+      <div class="inner-header">
+        <button class="back-btn" onclick="showScreen('home-screen')" aria-label="Back">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+        </button>
+        <div class="inner-title">Transfer Money</div>
+      </div>
+      <div class="scrollable" style="padding-top:16px;">
+        <div class="form-group">
+          <label class="form-label">FROM ACCOUNT</label>
+          <select class="form-input" style="appearance:none;">
+            <option>Savings (0912691894) — ETB 4,059,273.00</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">TO (RECIPIENT ACCOUNT NUMBER)</label>
+          <input class="form-input" type="text" id="recipient-account" placeholder="Enter account number"
+            oninput="lookupAccount(this.value)" />
+        </div>
+        <div id="recipient-name-box"
+          style="display:none; margin: -8px 20px 16px; border-radius:14px; padding:12px 16px; align-items:center; gap:12px; border:1.5px solid #22c55e; background:#162032;">
+          <span id="recipient-icon-display" style="display:flex; align-items:center; flex-shrink:0;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" fill="#22c55e" fill-opacity="0.2" stroke="#22c55e" stroke-width="2" />
+              <polyline points="8 12 11 15 16 9" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"
+                stroke-linejoin="round" />
             </svg>
           </span>
-          <span>More</span>
+          <div>
+            <div style="font-size:11px; letter-spacing:0.5px; font-weight:600; color:#22c55e;"
+              id="recipient-badge-display">ACCOUNT VERIFIED</div>
+            <div style="font-size:14px; font-weight:700; color:#e2e8f0;" id="recipient-name-display"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">AMOUNT (ETB)</label>
+          <input class="form-input" type="number" placeholder="0.00" id="transfer-amount" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">NOTE (OPTIONAL)</label>
+          <input class="form-input" type="text" placeholder="Payment for..." />
+        </div>
+        <button class="primary-btn" onclick="doTransfer()"
+          style="display:flex; align-items:center; justify-content:center; gap:8px;">
+          <span>Send Transfer</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div class="bottom-nav">
+        <button class="nav-btn" onclick="showScreen('home-screen')">
+          <span class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </span>
+          <span>Home</span>
+        </button>
+        <button class="nav-btn active" onclick="showScreen('transfer-screen')">
+          <span class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="7" y1="17" x2="17" y2="7"></line>
+              <polyline points="7 7 17 7 17 17"></polyline>
+            </svg>
+          </span>
+          <span>Transfer</span>
+        </button>
+        <button class="nav-btn" onclick="showScreen('history-screen')">
+          <span class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </span>
+          <span>History</span>
+        </button>
+        <button class="nav-btn" onclick="showToast('Not available')">
+          <span class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+              <line x1="2" y1="10" x2="22" y2="10"></line>
+            </svg>
+          </span>
+          <span>Cards</span>
         </button>
       </div>
     </div>
 
+    <!-- ══════════ CARDS SCREEN ══════════ -->
+    <div class="screen" id="cards-screen">
+      <div class="inner-header">
+        <button class="back-btn" onclick="showScreen('home-screen')" aria-label="Back">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+        </button>
+        <div class="inner-title">My Cards</div>
+      </div>
+      <div class="scrollable" style="padding-top:16px;">
+        <!-- Card 1 -->
+        <div
+          style="margin:0 20px 16px; border-radius:22px; background:linear-gradient(135deg,#ea580c,#f97316); padding:22px; box-shadow:0 8px 28px rgba(234,88,12,0.4);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:28px;">
+            <span style="font-size:12px;color:rgba(255,255,255,0.85);letter-spacing:1px;font-weight:600;">PREMIUM
+              DEBIT</span>
+            <span style="font-size:14px;font-weight:800;color:#fff;">KachaPay</span>
+          </div>
+          <div style="font-size:17px;color:#fff;letter-spacing:4px;font-weight:600;margin-bottom:20px;">•••• •••• ••••
+            4821</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+            <div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.75);">CARD HOLDER</div>
+              <div style="font-size:12px;color:#fff;font-weight:600;">Zeray Gebremical Gebremedhn.</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:11px;color:rgba(255,255,255,0.75);">EXPIRES</div>
+              <div style="font-size:14px;color:#fff;font-weight:600;">08/28</div>
+            </div>
+          </div>
+        </div>
+        <!-- Card 2 -->
+        <div
+          style="margin:0 20px 16px; border-radius:22px; background:linear-gradient(135deg,#241306,#120b06); border:1.5px solid #ea580c; padding:22px; box-shadow:0 8px 28px rgba(0,0,0,0.5);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:28px;">
+            <span style="font-size:12px;color:#fdba74;letter-spacing:1px;font-weight:600;">GOLD REWARDS</span>
+            <span style="font-size:14px;font-weight:800;color:#fff;">KachaPay</span>
+          </div>
+          <div style="font-size:17px;color:#fff;letter-spacing:4px;font-weight:600;margin-bottom:20px;">•••• •••• ••••
+            7634</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+            <div>
+              <div style="font-size:11px;color:#fdba74;">CARD HOLDER</div>
+              <div style="font-size:12px;color:#fff;font-weight:600;">Zeray Gebremical Gebremedhn.</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:11px;color:#fdba74;">EXPIRES</div>
+              <div style="font-size:14px;color:#fff;font-weight:600;">03/26</div>
+            </div>
+          </div>
+        </div>
+        <!-- Card Details -->
+        <div class="info-card">
+          <div class="info-row"><span class="info-key">Card Limit</span><span class="info-val">ETB 780,000</span></div>
+          <div class="info-row"><span class="info-key">Available Credit</span><span class="info-val">ETB 532,480</span>
+          </div>
+          <div class="info-row"><span class="info-key">Cashback Earned</span><span class="info-val">ETB 6,490</span>
+          </div>
+          <div class="info-row"><span class="info-key">Card Status</span><span class="info-val"
+              style="color:#34d399;">Active</span></div>
+          <div class="info-row"><span class="info-key">International Txns</span><span class="info-val"
+              style="color:#34d399;">Enabled</span></div>
+        </div>
+        <button class="primary-btn" style="background:linear-gradient(135deg,#dc2626,#ef4444);">Freeze Card</button>
+      </div>
+      <div class="bottom-nav">
+        <button class="nav-btn" onclick="showScreen('home-screen')">
+          <span class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </span>
+          <span>Home</span>
+        </button>
+        <button class="nav-btn" onclick="showScreen('transfer-screen')">
+          <span class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="7" y1="17" x2="17" y2="7"></line>
+              <polyline points="7 7 17 7 17 17"></polyline>
+            </svg>
+          </span>
+          <span>Transfer</span>
+        </button>
+        <button class="nav-btn active" onclick="showScreen('cards-screen')">
+          <span class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+              <line x1="2" y1="10" x2="22" y2="10"></line>
+            </svg>
+          </span>
+          <span>Cards</span>
+        </button>
+        <button class="nav-btn" onclick="showScreen('profile-screen')">
+          <span class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </span>
+          <span>Profile</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ══════════ HISTORY SCREEN ══════════ -->
     <div class="screen" id="history-screen">
       <div class="inner-header">
         <button class="back-btn" onclick="showScreen('home-screen')" aria-label="Back">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
           </svg>
@@ -306,68 +1239,573 @@
         <div class="inner-title">Transaction History</div>
       </div>
       <div class="scrollable">
-        <div class="transactions" style="padding-top:16px; display:flex; flex-direction:column; gap:12px;">
-          <div class="tx-item card-like">
-            <div class="tx-icon-wrap" style="background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.35); color:#22c55e;">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <div class="transactions" style="padding:16px 20px 100px; display:flex; flex-direction:column; gap:12px;">
+          <!-- 400 Birr Deposit -->
+          <div class="tx-item"
+            style="background:#190e06; border:1px solid #361b09; border-radius:18px; padding:16px; display:flex; align-items:center; gap:14px; box-shadow:0 4px 14px rgba(0,0,0,0.3);">
+            <div class="tx-icon-wrap"
+              style="width:46px; height:46px; border-radius:14px; background:rgba(34,197,94,0.15); border:1.5px solid rgba(34,197,94,0.35); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.3"
+                stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="19" x2="12" y2="5"></line>
                 <polyline points="5 12 12 5 19 12"></polyline>
               </svg>
             </div>
-            <div class="tx-info">
-              <div class="tx-name">Deposit</div>
-              <div class="tx-date">November 11, 2026</div>
+            <div class="tx-info" style="flex:1;">
+              <div class="tx-name" style="font-size:15px; font-weight:700; color:#ffffff;">Deposit</div>
+              <div class="tx-date" style="font-size:12px; color:#a1a1aa; margin-top:2px;">Today, 10:45 AM • Cash In
+              </div>
             </div>
-            <div class="tx-amount credit">+400 Birr</div>
+            <div class="tx-amount credit" style="font-size:15px; font-weight:800; color:#22c55e;">+400 Birr</div>
           </div>
 
-          <div class="tx-item card-like">
-            <div class="tx-icon-wrap" style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35); color:#ef4444;">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- 300 Birr Withdrawal -->
+          <div class="tx-item"
+            style="background:#190e06; border:1px solid #361b09; border-radius:18px; padding:16px; display:flex; align-items:center; gap:14px; box-shadow:0 4px 14px rgba(0,0,0,0.3);">
+            <div class="tx-icon-wrap"
+              style="width:46px; height:46px; border-radius:14px; background:rgba(239,68,68,0.15); border:1.5px solid rgba(239,68,68,0.35); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.3"
+                stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <polyline points="19 12 12 19 5 12"></polyline>
               </svg>
             </div>
-            <div class="tx-info">
-              <div class="tx-name">Withdrawal</div>
-              <div class="tx-date">November 11, 2026</div>
+            <div class="tx-info" style="flex:1;">
+              <div class="tx-name" style="font-size:15px; font-weight:700; color:#ffffff;">Withdrawal</div>
+              <div class="tx-date" style="font-size:12px; color:#a1a1aa; margin-top:2px;">Yesterday, 04:20 PM • Cash Out
+              </div>
             </div>
-            <div class="tx-amount debit">-300 Birr</div>
+            <div class="tx-amount debit" style="font-size:15px; font-weight:800; color:#ef4444;">-300 Birr</div>
           </div>
         </div>
       </div>
+      <div class="bottom-nav">
+        <button class="nav-btn" onclick="showScreen('home-screen')">
+          <span class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </span>
+          <span>Home</span>
+        </button>
+        <button class="nav-btn" onclick="showScreen('transfer-screen')">
+          <span class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="7" y1="17" x2="17" y2="7"></line>
+              <polyline points="7 7 17 7 17 17"></polyline>
+            </svg>
+          </span>
+          <span>Transfer</span>
+        </button>
+        <button class="nav-btn active" onclick="showScreen('history-screen')">
+          <span class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </span>
+          <span>History</span>
+        </button>
+        <button class="nav-btn" onclick="showToast('Not available')">
+          <span class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+              <line x1="2" y1="10" x2="22" y2="10"></line>
+            </svg>
+          </span>
+          <span>Cards</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ══════════ PROFILE SCREEN ══════════ -->
+    <div class="screen" id="profile-screen">
+      <div
+        style="background:linear-gradient(145deg,#ea580c,#c2410c);padding:48px 20px 32px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+        <div
+          style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#f97316,#ea580c);display:flex;align-items:center;justify-content:center;border:3px solid rgba(255,255,255,0.4);box-shadow:0 8px 24px rgba(0,0,0,0.3);">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <div style="font-size:20px;font-weight:800;color:#fff;">Zeray Gebremical Gebremedhn.</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.85);">zeray.g@kachapay.com</div>
+        <div
+          style="font-size:12px;background:rgba(255,255,255,0.2);padding:4px 14px;border-radius:20px;color:#fff;font-weight:600;">
+          Platinum Member</div>
+      </div>
+      <div class="scrollable" style="padding-bottom:100px;">
+        <div class="info-card">
+          <div class="info-row"><span class="info-key">Account Number</span><span class="info-val">0912691894</span>
+          </div>
+          <div class="info-row"><span class="info-key">Member Since</span><span class="info-val">January 2020</span>
+          </div>
+          <div class="info-row"><span class="info-key">Phone</span><span class="info-val">0912691894</span></div>
+          <div class="info-row"><span class="info-key">Country</span><span class="info-val">Ethiopia</span></div>
+        </div>
+        <div class="info-card">
+          <div class="info-row" onclick="showToast('Not available')" style="cursor:pointer;"><span
+              class="info-key">Notifications</span><span class="info-val" style="color:#f97316;">›</span></div>
+          <div class="info-row" onclick="showToast('Not available')" style="cursor:pointer;"><span
+              class="info-key">Security Settings</span><span class="info-val" style="color:#f97316;">›</span></div>
+          <div class="info-row" onclick="showToast('Not available')" style="cursor:pointer;"><span
+              class="info-key">Currency Preferences</span><span class="info-val" style="color:#f97316;">›</span></div>
+          <div class="info-row" onclick="showToast('Not available')" style="cursor:pointer;"><span
+              class="info-key">Language</span><span class="info-val" style="color:#f97316;">English ›</span></div>
+        </div>
+        <button class="primary-btn" style="background:linear-gradient(135deg,#dc2626,#ef4444);" onclick="logout()">Log
+          Out</button>
+      </div>
+      <div class="bottom-nav">
+        <button class="nav-btn" onclick="showScreen('home-screen')">
+          <span class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </span>
+          <span>Home</span>
+        </button>
+        <button class="nav-btn" onclick="showScreen('transfer-screen')">
+          <span class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="7" y1="17" x2="17" y2="7"></line>
+              <polyline points="7 7 17 7 17 17"></polyline>
+            </svg>
+          </span>
+          <span>Transfer</span>
+        </button>
+        <button class="nav-btn" onclick="showScreen('history-screen')">
+          <span class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </span>
+          <span>History</span>
+        </button>
+        <button class="nav-btn" onclick="showToast('Not available')">
+          <span class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+              <line x1="2" y1="10" x2="22" y2="10"></line>
+            </svg>
+          </span>
+          <span>Cards</span>
+        </button>
+      </div>
+      <span>Profile</span>
+      </button>
     </div>
   </div>
 
+  <!-- PIN Confirm Overlay -->
+  <div class="pin-confirm-overlay" id="pin-confirm-overlay">
+    <div
+      style="width:56px; height:56px; border-radius:50%; background:rgba(249,115,22,0.15); border:1.5px solid rgba(249,115,22,0.35); display:flex; align-items:center; justify-content:center; margin-bottom:14px;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+    </div>
+    <div class="pin-confirm-title">Enter PIN</div>
+    <div class="pin-confirm-sub" id="pc-sub">Enter your 6-digit PIN to confirm</div>
+    <div class="pin-confirm-dots" id="pc-dots">
+      <div class="pin-confirm-dot" id="pc0"></div>
+      <div class="pin-confirm-dot" id="pc1"></div>
+      <div class="pin-confirm-dot" id="pc2"></div>
+      <div class="pin-confirm-dot" id="pc3"></div>
+      <div class="pin-confirm-dot" id="pc4"></div>
+      <div class="pin-confirm-dot" id="pc5"></div>
+    </div>
+    <div class="pin-confirm-keypad">
+      <button class="pin-confirm-key" data-ck="1">1</button>
+      <button class="pin-confirm-key" data-ck="2">2</button>
+      <button class="pin-confirm-key" data-ck="3">3</button>
+      <button class="pin-confirm-key" data-ck="4">4</button>
+      <button class="pin-confirm-key" data-ck="5">5</button>
+      <button class="pin-confirm-key" data-ck="6">6</button>
+      <button class="pin-confirm-key" data-ck="7">7</button>
+      <button class="pin-confirm-key" data-ck="8">8</button>
+      <button class="pin-confirm-key" data-ck="9">9</button>
+      <button class="pin-confirm-key empty-key"></button>
+      <button class="pin-confirm-key" data-ck="0">0</button>
+      <button class="pin-confirm-key del" id="pc-del" aria-label="Delete">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+          <line x1="18" y1="9" x2="12" y2="15"></line>
+          <line x1="12" y1="9" x2="18" y2="15"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="pin-confirm-error" id="pc-error"></div>
+    <button class="pin-confirm-cancel" onclick="closePinConfirm()">Cancel</button>
+  </div>
+
+  <!-- Countdown Modal (replaces authorize popup) -->
+  <div class="success-popup" id="success-popup">
+    <div class="success-box" style="width: 320px; padding: 28px 24px;">
+      <div
+        style="width:64px; height:64px; border-radius:50%; background:rgba(234,88,12,0.15); border:2px solid #ea580c; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; box-shadow:0 0 20px rgba(234,88,12,0.35);">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </div>
+      <div class="success-title" style="color: #ffffff; font-size:19px; font-weight:800; letter-spacing:0.3px;">Complete
+        Transaction</div>
+      <div style="font-size:13px; color:#fdba74; margin-top:4px; font-weight:500;">Time remaining to complete
+        transaction:</div>
+
+      <!-- 1 Hour Countdown Box -->
+      <div
+        style="margin:16px auto 14px; background:#120b06; border:1.5px solid #ea580c; border-radius:18px; padding:14px 16px; box-shadow:inset 0 2px 10px rgba(0,0,0,0.6), 0 0 18px rgba(234,88,12,0.25);">
+        <div id="countdown-timer"
+          style="font-size:32px; font-weight:800; font-family:'Courier New', monospace; color:#f97316; letter-spacing:2px; text-shadow:0 0 14px rgba(249,115,22,0.6);">
+          01:00:00</div>
+        <div
+          style="display:flex; justify-content:center; gap:26px; font-size:10px; color:#94a3b8; font-weight:600; letter-spacing:1px; margin-top:4px;">
+          <span>HOURS</span>
+          <span>MINS</span>
+          <span>SECS</span>
+        </div>
+      </div>
+
+      <!-- Details -->
+      <div
+        style="background:rgba(255,255,255,0.03); border:1px solid #3c200c; border-radius:14px; padding:12px 14px; text-align:left; font-size:12px; color:#cbd5e1; margin-bottom:18px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <span style="color:#94a3b8;">Recipient:</span>
+          <span style="font-weight:700; color:#fff;">Zeray Gebremical Gebremedhn</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <span style="color:#94a3b8;">Account:</span>
+          <span style="font-weight:600; color:#fdba74;">1000022532115</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;" id="cd-amount-row">
+          <span style="color:#94a3b8;">Amount:</span>
+          <span style="font-weight:700; color:#fff;" id="cd-amount">ETB 0.00</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:#94a3b8;">Status:</span>
+          <span style="font-weight:700; color:#22c55e; display:flex; align-items:center; gap:5px;">
+            <span
+              style="width:7px; height:7px; border-radius:50%; background:#22c55e; display:inline-block; box-shadow:0 0 8px #22c55e;"></span>
+            Processing Transfer
+          </span>
+        </div>
+      </div>
+
+      <button class="primary-btn"
+        style="margin:0; width:100%; padding:13px; border-radius:14px; font-size:15px; font-weight:700; background:linear-gradient(135deg, #ea580c, #f97316); border:none; color:#fff; cursor:pointer;"
+        onclick="closePopup()">Done</button>
+    </div>
+  </div>
+
+  </div>
+
   <script>
-    function showScreen(screenId) {
-      document.querySelectorAll('.screen').forEach(screen => {
-        screen.classList.toggle('active', screen.id === screenId);
-      });
+    // ---- State ----
+    const CORRECT_PIN = '846037';
+    let pinEntry = '';
+    let balanceVisible = false;
+    const BALANCE = 'ETB 4,059,273.00';
+    const SAVINGS = 'ETB 4,059,273.00';
 
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        const active = btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(screenId);
-        btn.classList.toggle('active', active);
+    const EYE_OPEN_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+    const EYE_OFF_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+
+    // ---- PIN Logic ----
+    document.querySelectorAll('.key-btn[data-k]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (pinEntry.length >= 6) return;
+        pinEntry += btn.dataset.k;
+        updateDots();
+        btn.classList.add('pressed');
+        setTimeout(() => btn.classList.remove('pressed'), 120);
+        if (pinEntry.length === 6) {
+          setTimeout(checkPin, 180);
+        }
       });
+    });
+
+    document.getElementById('del-btn').addEventListener('click', () => {
+      if (pinEntry.length > 0) {
+        pinEntry = pinEntry.slice(0, -1);
+        updateDots();
+        document.getElementById('pin-error').textContent = '';
+      }
+    });
+
+    function updateDots() {
+      for (let i = 0; i < 6; i++) {
+        document.getElementById('d' + i).classList.toggle('filled', i < pinEntry.length);
+      }
     }
 
-    function showToast(msg) {
-      const toast = document.getElementById('toast-notif');
-      const text = document.getElementById('toast-msg');
-      text.textContent = msg;
-      toast.classList.add('show');
-      clearTimeout(window.toastTimer);
-      window.toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+    function checkPin() {
+      if (pinEntry === CORRECT_PIN) {
+        document.getElementById('pin-error').textContent = '';
+        showScreen('home-screen');
+      } else {
+        document.getElementById('pin-error').textContent = 'Incorrect PIN. Please try again.';
+        pinEntry = '';
+        updateDots();
+        // Shake animation
+        const dots = document.getElementById('pin-dots');
+        dots.style.animation = 'none';
+        dots.offsetHeight; // reflow
+        dots.style.animation = 'shake 0.4s ease';
+      }
     }
 
-    let balanceHidden = true;
+    // ---- Balance Toggle ----
     function toggleBalance() {
-      const amount = document.getElementById('balance-display');
-      const eyeIcon = document.getElementById('eye-icon');
-      balanceHidden = !balanceHidden;
-      amount.textContent = balanceHidden ? '••••••' : 'ETB 4,059,273.00';
-      eyeIcon.style.opacity = balanceHidden ? '0.8' : '1';
+      balanceVisible = !balanceVisible;
+      const disp = document.getElementById('balance-display');
+      const eye = document.getElementById('eye-btn');
+      if (balanceVisible) {
+        disp.textContent = BALANCE;
+        eye.innerHTML = EYE_OFF_SVG;
+      } else {
+        disp.textContent = '••••••';
+        eye.innerHTML = EYE_OPEN_SVG;
+      }
+      // Update account rows too — only savings account now
+      document.querySelectorAll('.acc-balance').forEach(el => {
+        el.textContent = balanceVisible ? SAVINGS : '••••';
+      });
     }
+
+    // ---- Screen Navigation ----
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const target = document.getElementById(id);
+      if (target) target.classList.add('active');
+    }
+
+    // ---- Toast Notification ----
+    let toastTimer;
+    function showToast(msg = 'Not available') {
+      const toast = document.getElementById('toast-notif');
+      const msgEl = document.getElementById('toast-msg');
+      if (!toast) return;
+      if (msgEl) msgEl.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2200);
+    }
+
+    // ---- Account Lookup ----
+    const ACCOUNT_DB = {
+      '1000022532115': 'Zeray Gebremical Gebremedhn'
+    };
+
+    function lookupAccount(val) {
+      const box = document.getElementById('recipient-name-box');
+      const badgeEl = document.getElementById('recipient-badge-display');
+      const nameEl = document.getElementById('recipient-name-display');
+      const iconEl = document.getElementById('recipient-icon-display');
+      const accInput = document.getElementById('recipient-account');
+      const trimmed = val.trim();
+
+      if (!trimmed) {
+        box.style.display = 'none';
+        accInput.style.borderColor = '#334155';
+        return;
+      }
+
+      if (ACCOUNT_DB[trimmed]) {
+        nameEl.textContent = ACCOUNT_DB[trimmed];
+        badgeEl.textContent = 'ACCOUNT VERIFIED';
+        badgeEl.style.color = '#22c55e';
+        box.style.borderColor = '#22c55e';
+        box.style.background = '#162032';
+        iconEl.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#22c55e" fill-opacity="0.2" stroke="#22c55e" stroke-width="2"/><polyline points="8 12 11 15 16 9" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        box.style.display = 'flex';
+        accInput.style.borderColor = '#22c55e';
+      } else {
+        nameEl.textContent = 'Account not found';
+        badgeEl.textContent = 'INVALID ACCOUNT';
+        badgeEl.style.color = '#ef4444';
+        box.style.borderColor = '#ef4444';
+        box.style.background = '#27171d';
+        iconEl.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+        box.style.display = 'flex';
+        accInput.style.borderColor = '#ef4444';
+      }
+    }
+
+    // ---- Transfer ----
+    function doTransfer() {
+      const accInput = document.getElementById('recipient-account');
+      const accVal = accInput ? accInput.value.trim() : '';
+      if (accVal !== '1000022532115') {
+        alert('Please enter a valid recipient account number (1000022532115).');
+        return;
+      }
+      const amt = document.getElementById('transfer-amount').value;
+      if (!amt || isNaN(amt) || parseFloat(amt) <= 0) {
+        alert('Please enter a valid amount.');
+        return;
+      }
+      openPinConfirm();
+    }
+
+    // ---- PIN Confirm Overlay ----
+    let pcEntry = '';
+
+    function openPinConfirm() {
+      pcEntry = '';
+      updatePcDots();
+      document.getElementById('pc-error').textContent = '';
+      document.getElementById('pin-confirm-overlay').classList.add('show');
+    }
+
+    function closePinConfirm() {
+      pcEntry = '';
+      updatePcDots();
+      document.getElementById('pc-error').textContent = '';
+      document.getElementById('pin-confirm-overlay').classList.remove('show');
+    }
+
+    function updatePcDots() {
+      for (let i = 0; i < 6; i++) {
+        document.getElementById('pc' + i).classList.toggle('filled', i < pcEntry.length);
+      }
+    }
+
+    document.querySelectorAll('.pin-confirm-key[data-ck]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (pcEntry.length >= 6) return;
+        pcEntry += btn.dataset.ck;
+        updatePcDots();
+        btn.classList.add('pressed');
+        setTimeout(() => btn.classList.remove('pressed'), 120);
+        if (pcEntry.length === 6) setTimeout(checkPcPin, 180);
+      });
+    });
+
+    document.getElementById('pc-del').addEventListener('click', () => {
+      if (pcEntry.length > 0) {
+        pcEntry = pcEntry.slice(0, -1);
+        updatePcDots();
+        document.getElementById('pc-error').textContent = '';
+      }
+    });
+
+    // ---- Countdown Logic (1 hour) ----
+    let countdownSeconds = 3600;
+    let countdownInterval = null;
+
+    function startCountdown() {
+      if (countdownInterval) clearInterval(countdownInterval);
+      countdownSeconds = 3600;
+      renderCountdown();
+      countdownInterval = setInterval(() => {
+        if (countdownSeconds > 0) {
+          countdownSeconds--;
+          renderCountdown();
+        } else {
+          clearInterval(countdownInterval);
+          const timerEl = document.getElementById('countdown-timer');
+          if (timerEl) timerEl.textContent = '00:00:00';
+        }
+      }, 1000);
+    }
+
+    function renderCountdown() {
+      const hours = Math.floor(countdownSeconds / 3600);
+      const mins = Math.floor((countdownSeconds % 3600) / 60);
+      const secs = countdownSeconds % 60;
+      const formatted =
+        String(hours).padStart(2, '0') + ':' +
+        String(mins).padStart(2, '0') + ':' +
+        String(secs).padStart(2, '0');
+      const timerEl = document.getElementById('countdown-timer');
+      if (timerEl) timerEl.textContent = formatted;
+    }
+
+    function checkPcPin() {
+      if (pcEntry === CORRECT_PIN) {
+        closePinConfirm();
+        const amtInput = document.getElementById('transfer-amount');
+        const amtEl = document.getElementById('cd-amount');
+        if (amtEl && amtInput && amtInput.value) {
+          amtEl.textContent = 'ETB ' + parseFloat(amtInput.value).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        }
+        startCountdown();
+        document.getElementById('success-popup').classList.add('show');
+      } else {
+        document.getElementById('pc-error').textContent = 'Incorrect PIN. Please try again.';
+        pcEntry = '';
+        updatePcDots();
+        // shake dots
+        const dots = document.getElementById('pc-dots');
+        dots.style.animation = 'none';
+        dots.offsetHeight;
+        dots.style.animation = 'shake 0.4s ease';
+      }
+    }
+
+    function closePopup() {
+      document.getElementById('success-popup').classList.remove('show');
+      const accInput = document.getElementById('recipient-account');
+      if (accInput) { accInput.value = ''; accInput.style.borderColor = '#334155'; }
+      const box = document.getElementById('recipient-name-box');
+      if (box) box.style.display = 'none';
+      const amtInput = document.getElementById('transfer-amount');
+      if (amtInput) amtInput.value = '';
+      showScreen('home-screen');
+    }
+
+    // ---- Logout ----
+    function logout() {
+      pinEntry = '';
+      balanceVisible = false;
+      updateDots();
+      document.getElementById('balance-display').textContent = '••••••';
+      document.getElementById('eye-btn').innerHTML = EYE_OPEN_SVG;
+      document.querySelectorAll('.acc-balance').forEach(el => el.textContent = '••••');
+      document.getElementById('pin-error').textContent = '';
+      // Reset transfer form
+      const accInput = document.getElementById('recipient-account');
+      if (accInput) { accInput.value = ''; accInput.style.borderColor = '#334155'; }
+      const box = document.getElementById('recipient-name-box');
+      if (box) box.style.display = 'none';
+      closePinConfirm();
+      showScreen('pin-screen');
+    }
+
+    // ---- Shake keyframes ----
+    const style = document.createElement('style');
+    style.textContent = `
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+    }
+  `;
+    document.head.appendChild(style);
   </script>
 </body>
+
 </html>
