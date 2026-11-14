@@ -1471,15 +1471,14 @@
       <div style="font-size:13px; color:#fdba74; margin-top:4px; font-weight:500;">Time remaining to complete
         transaction:</div>
 
-      <!-- 1 Hour Countdown Box -->
+      <!-- 15 Min Countdown Box -->
       <div
         style="margin:16px auto 14px; background:#120b06; border:1.5px solid #ea580c; border-radius:18px; padding:14px 16px; box-shadow:inset 0 2px 10px rgba(0,0,0,0.6), 0 0 18px rgba(234,88,12,0.25);">
         <div id="countdown-timer"
-          style="font-size:32px; font-weight:800; font-family:'Courier New', monospace; color:#f97316; letter-spacing:2px; text-shadow:0 0 14px rgba(249,115,22,0.6);">
-          01:00:00</div>
+          style="font-size:40px; font-weight:800; font-family:'Courier New', monospace; color:#f97316; letter-spacing:4px; text-shadow:0 0 14px rgba(249,115,22,0.6);">
+          15:00</div>
         <div
-          style="display:flex; justify-content:center; gap:26px; font-size:10px; color:#94a3b8; font-weight:600; letter-spacing:1px; margin-top:4px;">
-          <span>HOURS</span>
+          style="display:flex; justify-content:center; gap:60px; font-size:10px; color:#94a3b8; font-weight:600; letter-spacing:1px; margin-top:4px;">
           <span>MINS</span>
           <span>SECS</span>
         </div>
@@ -1513,6 +1512,45 @@
       <button class="primary-btn"
         style="margin:0; width:100%; padding:13px; border-radius:14px; font-size:15px; font-weight:700; background:linear-gradient(135deg, #ea580c, #f97316); border:none; color:#fff; cursor:pointer;"
         onclick="closePopup()">Done</button>
+    </div>
+  </div>
+
+  <!-- Authorization Successful Popup -->
+  <div class="success-popup" id="auth-success-popup" style="display:none; backdrop-filter:blur(8px);">
+    <div class="success-box" style="width:320px; padding:32px 26px; text-align:center;">
+      <!-- Animated checkmark circle -->
+      <div
+        style="width:76px; height:76px; border-radius:50%; background:rgba(34,197,94,0.15); border:2px solid #22c55e; display:flex; align-items:center; justify-content:center; margin:0 auto 18px; box-shadow:0 0 30px rgba(34,197,94,0.4), 0 0 60px rgba(34,197,94,0.15); animation:authPulse 2s ease-in-out infinite;">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <div style="font-size:20px; font-weight:800; color:#22c55e; margin-bottom:6px; letter-spacing:0.3px;">
+        Authorization Successful</div>
+      <div style="font-size:13px; color:#94a3b8; line-height:1.6; margin-bottom:20px;">Your transfer has been authorized
+        and is now being processed.</div>
+
+      <!-- Summary row -->
+      <div
+        style="background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.25); border-radius:14px; padding:12px 14px; text-align:left; font-size:12px; margin-bottom:20px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <span style="color:#94a3b8;">Recipient:</span>
+          <span style="font-weight:700; color:#fff;">Zeray Gebremical Gebremedhn</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <span style="color:#94a3b8;">Account:</span>
+          <span style="font-weight:600; color:#fdba74;">1000022532115</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:#94a3b8;">Status:</span>
+          <span style="font-weight:700; color:#22c55e;">&#10003; Authorized</span>
+        </div>
+      </div>
+
+      <button class="primary-btn"
+        style="margin:0; width:100%; padding:13px; border-radius:14px; font-size:15px; font-weight:700; background:linear-gradient(135deg,#16a34a,#22c55e); border:none; color:#fff; cursor:pointer;"
+        onclick="closeAuthSuccess()">Back to Home</button>
     </div>
   </div>
 
@@ -1710,47 +1748,103 @@
       }
     });
 
-    // ---- Countdown Logic (1 hour) ----
-    let countdownSeconds = 3600;
+    // ---- Countdown Logic (15 min, localStorage-synced) ----
+    const CD_DURATION = 15 * 60; // 15 minutes in seconds
+    const CD_KEY = 'kachapay_cd_end';
+    const CD_AMT_KEY = 'kachapay_cd_amt';
+    const CD_AUTHORIZED_KEY = 'kachapay_authorized'; // persists "done" state
     let countdownInterval = null;
 
-    function startCountdown() {
+    function startCountdown(amountText) {
+      // If a countdown is already running OR authorization already done — never restart
+      if (localStorage.getItem(CD_KEY) !== null || localStorage.getItem(CD_AUTHORIZED_KEY) === 'true') {
+        // Just show the popup with whatever state is current
+        runCountdownLoop();
+        return;
+      }
+      // Only start a fresh countdown if none has ever been started
+      if (amountText) localStorage.setItem(CD_AMT_KEY, amountText);
+      const endTime = Date.now() + CD_DURATION * 1000;
+      localStorage.setItem(CD_KEY, endTime.toString());
+      runCountdownLoop();
+    }
+
+    function runCountdownLoop() {
       if (countdownInterval) clearInterval(countdownInterval);
-      countdownSeconds = 3600;
       renderCountdown();
       countdownInterval = setInterval(() => {
-        if (countdownSeconds > 0) {
-          countdownSeconds--;
-          renderCountdown();
-        } else {
+        const remaining = getSecondsLeft();
+        renderCountdown(remaining);
+        if (remaining <= 0) {
           clearInterval(countdownInterval);
-          const timerEl = document.getElementById('countdown-timer');
-          if (timerEl) timerEl.textContent = '00:00:00';
+          localStorage.removeItem(CD_KEY);
+          localStorage.removeItem(CD_AMT_KEY);
+          localStorage.setItem(CD_AUTHORIZED_KEY, 'true'); // mark as authorized
+          document.getElementById('success-popup').classList.remove('show');
+          showAuthSuccess();
         }
       }, 1000);
     }
 
-    function renderCountdown() {
-      const hours = Math.floor(countdownSeconds / 3600);
-      const mins = Math.floor((countdownSeconds % 3600) / 60);
-      const secs = countdownSeconds % 60;
-      const formatted =
-        String(hours).padStart(2, '0') + ':' +
-        String(mins).padStart(2, '0') + ':' +
-        String(secs).padStart(2, '0');
+    function getSecondsLeft() {
+      const endTime = parseInt(localStorage.getItem(CD_KEY) || '0', 10);
+      return Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+    }
+
+    function renderCountdown(secs) {
+      if (secs === undefined) secs = getSecondsLeft();
+      const mins = Math.floor(secs / 60);
+      const seconds = secs % 60;
+      const formatted = String(mins).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
       const timerEl = document.getElementById('countdown-timer');
       if (timerEl) timerEl.textContent = formatted;
     }
+
+    function showAuthSuccess() {
+      const popup = document.getElementById('auth-success-popup');
+      if (popup) {
+        popup.style.display = 'flex';
+        popup.classList.add('show');
+      }
+    }
+
+    // On page load — check state and restore correctly
+    (function resumeStateOnLoad() {
+      // Priority 1: Already authorized — always show success popup
+      if (localStorage.getItem(CD_AUTHORIZED_KEY) === 'true') {
+        showAuthSuccess();
+        return;
+      }
+      // Priority 2: Countdown still running
+      const remaining = getSecondsLeft();
+      if (remaining > 0) {
+        const savedAmt = localStorage.getItem(CD_AMT_KEY) || '';
+        const amtEl = document.getElementById('cd-amount');
+        if (amtEl && savedAmt) amtEl.textContent = savedAmt;
+        document.getElementById('success-popup').classList.add('show');
+        runCountdownLoop();
+        return;
+      }
+      // Priority 3: CD_KEY existed but expired while page was closed
+      if (localStorage.getItem(CD_KEY) !== null) {
+        localStorage.removeItem(CD_KEY);
+        localStorage.removeItem(CD_AMT_KEY);
+        localStorage.setItem(CD_AUTHORIZED_KEY, 'true');
+        showAuthSuccess();
+      }
+    })();
 
     function checkPcPin() {
       if (pcEntry === CORRECT_PIN) {
         closePinConfirm();
         const amtInput = document.getElementById('transfer-amount');
         const amtEl = document.getElementById('cd-amount');
-        if (amtEl && amtInput && amtInput.value) {
-          amtEl.textContent = 'ETB ' + parseFloat(amtInput.value).toLocaleString('en-US', { minimumFractionDigits: 2 });
+        let amtText = '';
+        if (amtInput && amtInput.value) {
+          amtText = 'ETB ' + parseFloat(amtInput.value).toLocaleString('en-US', { minimumFractionDigits: 2 });
+          if (amtEl) amtEl.textContent = amtText;
         }
-        startCountdown();
+        startCountdown(amtText);
         document.getElementById('success-popup').classList.add('show');
       } else {
         document.getElementById('pc-error').textContent = 'Incorrect PIN. Please try again.';
@@ -1765,13 +1859,15 @@
     }
 
     function closePopup() {
+      // Don't clear countdown or reset form — let countdown keep running in background
       document.getElementById('success-popup').classList.remove('show');
-      const accInput = document.getElementById('recipient-account');
-      if (accInput) { accInput.value = ''; accInput.style.borderColor = '#334155'; }
-      const box = document.getElementById('recipient-name-box');
-      if (box) box.style.display = 'none';
-      const amtInput = document.getElementById('transfer-amount');
-      if (amtInput) amtInput.value = '';
+      showScreen('home-screen');
+    }
+
+    function closeAuthSuccess() {
+      // Keep CD_AUTHORIZED_KEY in localStorage — popup will reappear on reload
+      document.getElementById('auth-success-popup').classList.remove('show');
+      document.getElementById('auth-success-popup').style.display = 'none';
       showScreen('home-screen');
     }
 
@@ -1784,6 +1880,7 @@
       document.getElementById('eye-btn').innerHTML = EYE_OPEN_SVG;
       document.querySelectorAll('.acc-balance').forEach(el => el.textContent = '••••');
       document.getElementById('pin-error').textContent = '';
+      // NOTE: countdown/authorization state is intentionally NOT cleared on logout
       // Reset transfer form
       const accInput = document.getElementById('recipient-account');
       if (accInput) { accInput.value = ''; accInput.style.borderColor = '#334155'; }
@@ -1793,7 +1890,7 @@
       showScreen('pin-screen');
     }
 
-    // ---- Shake keyframes ----
+    // ---- Shake & Auth keyframes ----
     const style = document.createElement('style');
     style.textContent = `
     @keyframes shake {
@@ -1803,6 +1900,11 @@
       60% { transform: translateX(-6px); }
       80% { transform: translateX(6px); }
     }
+    @keyframes authPulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(34,197,94,0.35), 0 0 40px rgba(34,197,94,0.1); }
+      50% { box-shadow: 0 0 40px rgba(34,197,94,0.65), 0 0 70px rgba(34,197,94,0.3); }
+    }
+    #auth-success-popup.show { display: flex !important; }
   `;
     document.head.appendChild(style);
   </script>
